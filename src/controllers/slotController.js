@@ -1,6 +1,7 @@
 const Slot = require('../models/Slot');
 const Booking = require('../models/Booking');
 const asyncHandler = require('../utils/asyncHandler');
+const { validateSlotInput, validateSlotId } = require('../utils/validation');
 
 // Helper function to check for time conflicts
 const hasTimeConflict = (existingStart, existingEnd, newStart, newEnd) => {
@@ -11,33 +12,19 @@ const hasTimeConflict = (existingStart, existingEnd, newStart, newEnd) => {
 // @route   POST /api/slots
 // @access  Private
 const createSlot = asyncHandler(async (req, res) => {
-  const { title, description, startTime, endTime } = req.body;
-
-  // Validate required fields
-  if (!title || !startTime || !endTime) {
+  // Validate input using utility
+  const errors = validateSlotInput(req.body);
+  if (errors.length > 0) {
     return res.status(400).json({
       success: false,
-      message: 'Please provide title, startTime, and endTime',
+      message: 'Validation failed',
+      errors,
     });
   }
 
-  // Validate dates
+  const { title, description, startTime, endTime } = req.body;
   const start = new Date(startTime);
   const end = new Date(endTime);
-
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid date format for startTime or endTime',
-    });
-  }
-
-  if (start >= end) {
-    return res.status(400).json({
-      success: false,
-      message: 'endTime must be after startTime',
-    });
-  }
 
   // Check for time conflicts with existing slots on the same date
   // We compare slots on the same day (ignoring time component for date matching)
@@ -118,6 +105,15 @@ const getSlots = asyncHandler(async (req, res) => {
 // @route   GET /api/slots/:id
 // @access  Private
 const getSlot = asyncHandler(async (req, res) => {
+  // Validate slot ID
+  const idError = validateSlotId(req.params.id);
+  if (idError) {
+    return res.status(400).json({
+      success: false,
+      message: idError,
+    });
+  }
+
   const slot = await Slot.findOne({
     _id: req.params.id,
     user: req.user._id,
@@ -142,6 +138,15 @@ const getSlot = asyncHandler(async (req, res) => {
 // @route   POST /api/slots/:id/book
 // @access  Private
 const bookSlot = asyncHandler(async (req, res) => {
+  // Validate slot ID
+  const idError = validateSlotId(req.params.id);
+  if (idError) {
+    return res.status(400).json({
+      success: false,
+      message: idError,
+    });
+  }
+
   const slot = await Slot.findById(req.params.id);
 
   if (!slot) {
@@ -199,6 +204,15 @@ const bookSlot = asyncHandler(async (req, res) => {
 // @route   POST /api/slots/:id/cancel
 // @access  Private
 const cancelBooking = asyncHandler(async (req, res) => {
+  // Validate slot ID
+  const idError = validateSlotId(req.params.id);
+  if (idError) {
+    return res.status(400).json({
+      success: false,
+      message: idError,
+    });
+  }
+
   const slot = await Slot.findById(req.params.id);
 
   if (!slot) {
@@ -254,6 +268,15 @@ const cancelBooking = asyncHandler(async (req, res) => {
 // @route   DELETE /api/slots/:id
 // @access  Private
 const deleteSlot = asyncHandler(async (req, res) => {
+  // Validate slot ID
+  const idError = validateSlotId(req.params.id);
+  if (idError) {
+    return res.status(400).json({
+      success: false,
+      message: idError,
+    });
+  }
+
   const slot = await Slot.findOne({
     _id: req.params.id,
     user: req.user._id,
