@@ -25,11 +25,27 @@ const slotSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  // Booking fields
+  isBooked: {
+    type: Boolean,
+    default: false,
+  },
+  bookedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  bookedAt: {
+    type: Date,
+    default: null,
+  },
 }, {
   timestamps: true,
 });
 
-// Index for faster queries
+// Indexes for faster queries
 slotSchema.index({ user: 1, startTime: 1 });
+slotSchema.index({ isBooked: 1 });
+slotSchema.index({ bookedBy: 1 });
 
 module.exports = mongoose.model('Slot', slotSchema);
